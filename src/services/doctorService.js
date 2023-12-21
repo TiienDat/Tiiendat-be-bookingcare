@@ -34,15 +34,34 @@ let getTopDoctorHome = (limit) => {
 let getAllDoctors = () => {
     return new Promise(async (resolve, reject) => {
         try {
-            let doctors = await db.User.findAll({
+            let data = await db.User.findAll({
                 where: { roleId: 'R2' },
                 attributes: {
-                    exclude: ['password', 'image']
-                }
+                    exclude: ['password']
+                },
+                include: [
+                    {
+                        model: db.Doctor_Infor,
+                        include: [
+                            {
+                                model: db.Specialty, as: 'specialtyData', attributes: ['name']
+                            }
+                        ]
+                    },
+                    { model: db.Allcode, as: 'positionData', attributes: ['valueEn', 'valueVi'] }
+                ],
+                raw: true,
+                nest: true
             })
+            if (data && data.length > 0) {
+                data.map(item => {
+                    item.image = new Buffer(item.image, 'base64').toString('binary');
+                    return item
+                })
+            }
             resolve({
                 errCode: 0,
-                data: doctors
+                data
             });
         } catch (error) {
             reject(error)
