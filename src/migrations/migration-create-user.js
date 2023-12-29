@@ -33,7 +33,7 @@ module.exports = {
         type: Sequelize.STRING
       },
       image: {
-        type: Sequelize.STRING
+        type: Sequelize.BLOB('long')
       },
       phonenumber: {
         type: Sequelize.STRING

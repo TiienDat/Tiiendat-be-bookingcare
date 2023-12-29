@@ -1,8 +1,8 @@
 import { raw } from 'body-parser';
 import db from '../models';
 require('dotenv').config();
-import _ from 'lodash';
 import emailService from './emailService'
+import _ from 'lodash';
 
 const MAX_NUMBER_SCHEDULE = process.env.MAX_NUMBER_SCHEDULE;
 
@@ -18,6 +18,14 @@ let getTopDoctorHome = (limit) => {
                 include: [
                     { model: db.Allcode, as: 'positionData', attributes: ['valueEn', 'valueVi'] },
                     { model: db.Allcode, as: 'genderData', attributes: ['valueEn', 'valueVi'] },
+                    {
+                        model: db.Doctor_Infor,
+                        include: [
+                            {
+                                model: db.Specialty, as: 'specialtyData', attributes: ['name']
+                            }
+                        ]
+                    },
                 ],
                 raw: true,
                 nest: true
@@ -55,7 +63,7 @@ let getAllDoctors = () => {
             })
             if (data && data.length > 0) {
                 data.map(item => {
-                    item.image = new Buffer(item.image, 'base64').toString('binary');
+                    item.image = Buffer.from(item.image, 'base64').toString('binary');
                     return item
                 })
             }
@@ -206,7 +214,7 @@ let getDetailDoctorById = (id) => {
 
                 })
                 if (data && data.image) {
-                    data.image = new Buffer(data.image, 'base64').toString('binary');
+                    data.image = Buffer.from(data.image, 'base64').toString('binary');
 
                 }
                 if (!data) data = {};
@@ -265,26 +273,36 @@ let bulkCreateSchedule = (data) => {
                         return item;
                     })
                 }
+                console.log('check data send :---------------', schedule)
                 //get all existing data
-                let existing = await db.Schedule.findAll(
-                    {
-                        where: { doctorId: data.doctorId, date: data.formatedDate },
-                        attributes: ['timeType', 'date', 'doctorId', 'maxNumber'],
-                        raw: true
-                    })
-                let toCreate = _.differenceWith(schedule, existing, (a, b) => {
-                    return a.timeType === b.timeType && +a.date === +b.date;
-                });
-                console.log('chech to create:', toCreate)
-                //create different
-                if (toCreate && toCreate.length > 0) {
-                    await db.Schedule.bulkCreate(toCreate);
-                }
-                // await db.Schedule.bulkCreate(schedule)
+                // let existing = await db.Schedule.findAll(
+                //     {
+                //         where: { doctorId: data.doctorId, date: data.formatedDate },
+                //         attributes: ['timeType', 'date', 'doctorId', 'maxNumber'],
+                //         raw: true,
+                //     })
+                // //convert date
+                // if (existing && existing.length > 0) {
+                //     existing = existing.map(item => {
+                //         item.date = new Date(item.date).getTime();
+                //         return item;
+                //     })
+                // }
+                // console.log('check data send2 :---------------', existing)
+                //compare difference
+                // let toCreate = _.differenceWith(schedule, existing, (a, b) => {
+                //     return a.timeType === b.timeType && a.date === b.date;
+                // });
+                // console.log('chech to create:', toCreate)
+                //create data
+                // if (toCreate && toCreate.length > 0) {
+                await db.Schedule.bulkCreate(schedule, { returning: true });
+                // }
                 resolve({
                     errCode: 0,
                     errMessage: 'OK'
                 })
+                //
             }
         } catch (error) {
             reject(error)
@@ -408,7 +426,7 @@ let getProfileDoctorById = (inputId) => {
                     nest: true
                 })
                 if (data && data.image) {
-                    data.image = new Buffer(data.image, 'base64').toString('binary');
+                    data.image = Buffer.from(data.image, 'base64').toString('binary');
 
                 }
                 if (!data) data = {}

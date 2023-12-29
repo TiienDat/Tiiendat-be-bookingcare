@@ -215,6 +215,7 @@ let getAllCodeService = (type) => {
                 res.errCode = 0;
                 res.data = allcode;
                 resolve(res);
+                console.log('check data allcode :', allcode)
             }
         } catch (error) {
             reject(error)
